@@ -40,3 +40,7 @@ deploy/napcat/shared_media/*
 
 # local secrets
 deploy/napcat/.env
+
+# Local deployment-only artifacts
+deploy/migration/
+deploy/napcat/shared_media
