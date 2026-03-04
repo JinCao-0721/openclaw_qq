@@ -7,6 +7,7 @@
 - [3 分钟快速开始](./quickstart.md)
 - [配置参考（分组版）](./config-reference.md)
 - [部署指引（NapCat）](../deploy/napcat/README.md)
+- [高级能力与完整参数](./advanced.md)
 - [英文文档入口](./index.en.md)
 
 ## 文档目标
