@@ -53,4 +53,4 @@ Verification checklist:
 ## 5. Next Steps
 
 - Admin and allow/block controls: [Config Reference](./config-reference.en.md)
-- Container deployment details: [NapCat Guide](../deploy/napcat/README.en.md)
+- Container deployment details: [NapCat Guide](../deploy/napcat/archive/README.en.legacy.md)

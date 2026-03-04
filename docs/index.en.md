@@ -6,7 +6,7 @@
 
 - [3-minute Quickstart](./quickstart.en.md)
 - [Config Reference (Grouped)](./config-reference.en.md)
-- [Deployment Guide (NapCat)](../deploy/napcat/README.en.md)
+- [Deployment Guide (NapCat)](../deploy/napcat/archive/README.en.legacy.md)
 - [Advanced Features / Full Parameters](./advanced.en.md)
 - [Chinese Docs Home](./index.md)
 

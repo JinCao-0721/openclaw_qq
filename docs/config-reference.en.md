@@ -71,5 +71,5 @@
 
 ## Read More
 
-- Full parameter table: see root `README.en.md`.
-- Deployment details: [NapCat deployment guide](../deploy/napcat/README.en.md).
+- Full parameter table: see root `archive/README.en.legacy.md`.
+- Deployment details: [NapCat deployment guide](../deploy/napcat/archive/README.en.legacy.md).

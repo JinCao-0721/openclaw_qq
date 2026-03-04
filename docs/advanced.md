@@ -4,13 +4,13 @@
 
 # OpenClaw QQ 插件 (OneBot v11)
 
-> English version: [README.en.md](./README.en.md)
+> 历史英文 README 归档：[`docs/archive/README.en.legacy.md`](./archive/README.en.legacy.md)
 
 ## 📚 文档中心
 
-- [文档主页](./docs/index.md)
-- [3 分钟快速开始](./docs/quickstart.md)
-- [配置参考（分组版）](./docs/config-reference.md)
+- [文档主页](./index.md)
+- [3 分钟快速开始](./quickstart.md)
+- [配置参考（分组版）](./config-reference.md)
 
 ## 📢 官方交流方式（唯一）
 
