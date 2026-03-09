@@ -1432,6 +1432,7 @@ function buildQQHiddenMetaBlock(params: {
     conversationLabel: string;
     sessionLabel: string;
     senderName?: string;
+    senderRole?: string;
     isAdmin: boolean;
     activeTempSlot: string | null;
     mentionedByAt: boolean;
@@ -1453,6 +1454,7 @@ function buildQQHiddenMetaBlock(params: {
         params.isGuild ? `guildId=${String(params.guildId ?? "")}` : "",
         params.isGuild ? `channelId=${String(params.channelId ?? "")}` : "",
         `senderName=${params.senderName || "unknown"}`,
+        `senderRole=${params.senderRole || "unknown"}`,
         `isAdmin=${String(params.isAdmin)}`,
         `trigger=${triggerSummary || "normal"}`,
         `tempSession=${params.activeTempSlot || "none"}`,
@@ -2755,6 +2757,7 @@ ${current}
                             conversationLabel,
                             sessionLabel,
                             senderName: event.sender?.nickname || event.sender?.card || "Unknown",
+                            senderRole: event.sender?.role,
                             isAdmin,
                             activeTempSlot,
                             mentionedByAt,
