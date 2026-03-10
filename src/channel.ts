@@ -1429,6 +1429,31 @@ async function downloadImageToBase64(url: string, timeoutMs = 10000): Promise<st
     }
 }
 
+async function downloadImageToFile(url: string, timeoutMs = 10000): Promise<string | null> {
+    try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        const resp = await fetch(url, { signal: controller.signal });
+        clearTimeout(timer);
+        if (!resp.ok) { console.warn(`[QQ] Image download HTTP ${resp.status} for ${url.slice(0, 80)}`); return null; }
+        const contentType = resp.headers.get("content-type") || "";
+        if (!contentType.startsWith("image/")) { console.warn(`[QQ] Image download non-image content-type: ${contentType}`); return null; }
+        const buffer = Buffer.from(await resp.arrayBuffer());
+        if (buffer.byteLength === 0 || buffer.byteLength > 10 * 1024 * 1024) return null;
+        const ext = contentType.includes("png") ? ".png" : contentType.includes("gif") ? ".gif" : contentType.includes("webp") ? ".webp" : ".jpg";
+        const tmpDir = path.join(homedir(), ".openclaw", "media", "inbound");
+        await fs.mkdir(tmpDir, { recursive: true });
+        const fileName = `qq_${Date.now()}_${Math.random().toString(36).slice(2, 8)}${ext}`;
+        const filePath = path.join(tmpDir, fileName);
+        await fs.writeFile(filePath, buffer);
+        console.log(`[QQ] Image downloaded to ${filePath} (${buffer.byteLength} bytes)`);
+        return filePath;
+    } catch (err) {
+        console.warn(`[QQ] Failed to download image to file: ${String(err)}`);
+        return null;
+    }
+}
+
 async function ensureFileInSharedMedia(localPath: string, hostSharedDir: string): Promise<string> {
     const ext = path.extname(localPath) || ".dat";
     const baseName = `${Date.now()}_${Math.random().toString(36).slice(2, 10)}${ext}`;
@@ -2175,9 +2200,9 @@ export const qqChannel: ChannelPlugin<ResolvedQQAccount> = {
                                 }
                                 if (imageUrl) {
                                     if (imageUrl.startsWith("http")) {
-                                        const base64 = await downloadImageToBase64(imageUrl);
-                                        if (base64) {
-                                            imageHints.push(base64);
+                                        const localPath = await downloadImageToFile(imageUrl);
+                                        if (localPath) {
+                                            imageHints.push(localPath);
                                             resolvedText += ` [图片]`;
                                         } else {
                                             imageHints.push(imageUrl);
@@ -2561,8 +2586,8 @@ ${current}
                             for (const rawUrl of replyImageUrls) {
                                 if (!rawUrl || imageHints.includes(rawUrl)) continue;
                                 if (rawUrl.startsWith("http")) {
-                                    const base64 = await downloadImageToBase64(rawUrl);
-                                    imageHints.push(base64 || rawUrl);
+                                    const localPath = await downloadImageToFile(rawUrl);
+                                    imageHints.push(localPath || rawUrl);
                                 } else {
                                     imageHints.push(rawUrl);
                                 }
@@ -2909,11 +2934,25 @@ ${current}
                     }
                     bodyWithReply = systemBlock + bodyWithReply;
 
-                    const inboundMediaUrls = Array.from(new Set([
+                    const allImageSources = Array.from(new Set([
                         ...extractImageUrls(event.message),
                         ...imageHints,
                         ...layeredContext.imageUrls,
                     ])).slice(0, 5);
+
+                    // Separate local file paths from URLs
+                    const inboundMediaPaths: string[] = [];
+                    const inboundMediaUrls: string[] = [];
+                    const inboundMediaTypes: string[] = [];
+                    for (const src of allImageSources) {
+                        if (src.startsWith("/") || src.startsWith("file:")) {
+                            inboundMediaPaths.push(src);
+                            inboundMediaUrls.push(src);
+                            inboundMediaTypes.push("image/jpeg");
+                        } else {
+                            inboundMediaUrls.push(src);
+                        }
+                    }
 
                     const shouldComputeCommandAuthorized = runtime.channel.commands.shouldComputeCommandAuthorized(text, cfg);
                     const commandAuthorized = shouldComputeCommandAuthorized ? isAdmin : true;
@@ -2923,6 +2962,7 @@ ${current}
                         SessionKey: route.sessionKey, AccountId: route.accountId, ChatType: isGroup ? "group" : isGuild ? "channel" : "direct", Timestamp: event.time * 1000,
                         Surface: "qq",
                         OriginatingChannel: "qq", OriginatingTo: deliveryTo, CommandAuthorized: commandAuthorized,
+                        ...(inboundMediaPaths.length > 0 && { MediaPaths: inboundMediaPaths, MediaTypes: inboundMediaTypes }),
                         ...(inboundMediaUrls.length > 0 && { MediaUrls: inboundMediaUrls }),
                         ...(replyMsgId && { ReplyToId: replyMsgId, ReplyToBody: replyToBody, ReplyToSender: replyToSender }),
                     });
