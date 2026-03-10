@@ -1411,6 +1411,24 @@ async function readLocalFileAsBase64(localPath: string): Promise<string> {
     return `base64://${data.toString("base64")}`;
 }
 
+async function downloadImageToBase64(url: string, timeoutMs = 10000): Promise<string | null> {
+    try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        const resp = await fetch(url, { signal: controller.signal });
+        clearTimeout(timer);
+        if (!resp.ok) return null;
+        const contentType = resp.headers.get("content-type") || "";
+        if (!contentType.startsWith("image/")) return null;
+        const buffer = Buffer.from(await resp.arrayBuffer());
+        if (buffer.byteLength === 0 || buffer.byteLength > 10 * 1024 * 1024) return null;
+        return `base64://${buffer.toString("base64")}`;
+    } catch (err) {
+        console.warn(`[QQ] Failed to download image: ${String(err)}`);
+        return null;
+    }
+}
+
 async function ensureFileInSharedMedia(localPath: string, hostSharedDir: string): Promise<string> {
     const ext = path.extname(localPath) || ".dat";
     const baseName = `${Date.now()}_${Math.random().toString(36).slice(2, 10)}${ext}`;
@@ -2156,8 +2174,19 @@ export const qqChannel: ChannelPlugin<ResolvedQQAccount> = {
                                     }
                                 }
                                 if (imageUrl) {
-                                    imageHints.push(imageUrl);
-                                    resolvedText += ` [图片: ${imageUrl}]`;
+                                    if (imageUrl.startsWith("http")) {
+                                        const base64 = await downloadImageToBase64(imageUrl);
+                                        if (base64) {
+                                            imageHints.push(base64);
+                                            resolvedText += ` [图片]`;
+                                        } else {
+                                            imageHints.push(imageUrl);
+                                            resolvedText += ` [图片: ${imageUrl}]`;
+                                        }
+                                    } else {
+                                        imageHints.push(imageUrl);
+                                        resolvedText += ` [图片: ${imageUrl}]`;
+                                    }
                                 } else {
                                     resolvedText += " [图片]";
                                 }
@@ -2529,8 +2558,14 @@ ${current}
                     if (repliedMsg) {
                         try {
                             const replyImageUrls = extractImageUrls(Array.isArray(repliedMsg.message) ? repliedMsg.message : repliedMsg.raw_message, 5);
-                            for (const imageUrl of replyImageUrls) {
-                                if (imageUrl && !imageHints.includes(imageUrl)) imageHints.push(imageUrl);
+                            for (const rawUrl of replyImageUrls) {
+                                if (!rawUrl || imageHints.includes(rawUrl)) continue;
+                                if (rawUrl.startsWith("http")) {
+                                    const base64 = await downloadImageToBase64(rawUrl);
+                                    imageHints.push(base64 || rawUrl);
+                                } else {
+                                    imageHints.push(rawUrl);
+                                }
                             }
                         } catch { }
                     }
